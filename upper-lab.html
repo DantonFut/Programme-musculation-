@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Upper Lab — Suivi muscu</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-2: #1c232e;
+    --line: #2a323d;
+    --txt: #e6edf3;
+    --txt-dim: #8b98a8;
+    --accent: #ff6b35;
+    --accent-soft: rgba(255,107,53,0.12);
+    --green: #3fb950;
+    --green-soft: rgba(63,185,80,0.14);
+    --mono: 'SF Mono', ui-monospace, 'Roboto Mono', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: var(--bg);
+    color: var(--txt);
+    font-family: var(--sans);
+    line-height: 1.5;
+    padding-bottom: 120px;
+    overscroll-behavior: none;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 0 14px; }
+
+  header {
+    padding: 22px 0 16px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 4px;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; }
+  .sub { color: var(--txt-dim); font-size: 13px; margin-top: 2px; }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin: 18px 0 6px;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    padding: 10px 0;
+    z-index: 30;
+  }
+  .tab {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--txt-dim);
+    padding: 12px 8px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.15s;
+    text-align: center;
+  }
+  .tab.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .tab small { display: block; font-weight: 400; font-size: 10px; letter-spacing: 0.05em; color: inherit; opacity: 0.75; text-transform: uppercase; margin-top: 2px; }
+
+  .session-title { font-size: 12px; color: var(--txt-dim); margin: 14px 2px 4px; font-family: var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
+  .warmup {
+    background: var(--surface);
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    color: var(--txt-dim);
+  }
+  .warmup b { color: var(--txt); }
+
+  .ex {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .ex-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 13px 14px 10px;
+  }
+  .ex-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 700;
+    padding-top: 2px;
+    min-width: 18px;
+  }
+  .ex-info { flex: 1; }
+  .ex-name { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .ex-meta { font-size: 12px; color: var(--txt-dim); margin-top: 1px; }
+  .ex-target { display: inline-block; font-size: 10px; background: var(--surface-2); color: var(--txt-dim); padding: 2px 7px; border-radius: 6px; margin-top: 5px; letter-spacing: 0.04em; }
+  .planb { font-size: 11px; color: var(--txt-dim); padding: 0 14px 8px; }
+  .planb b { color: var(--accent); font-weight: 600; }
+  .cue { font-size: 11px; color: var(--green); padding: 0 14px 8px; }
+
+  .sets { padding: 4px 14px 12px; }
+  .set-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 1fr 64px;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 7px;
+  }
+  .set-row.head { color: var(--txt-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .set-label { font-family: var(--mono); font-size: 12px; color: var(--txt-dim); }
+  .set-row input {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--txt);
+    padding: 9px 8px;
+    font-size: 15px;
+    text-align: center;
+    font-family: var(--mono);
+  }
+  .set-row input:focus { outline: none; border-color: var(--accent); }
+  .set-row input::placeholder { color: #4a5563; }
+  .done-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--txt-dim);
+    font-size: 19px;
+    padding: 7px 0;
+    cursor: pointer;
+    transition: 0.12s;
+  }
+  .done-btn.on { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+
+  .last-hint { font-size: 11px; color: var(--txt-dim); padding: 0 14px 11px; font-family: var(--mono); }
+  .last-hint b { color: var(--accent); }
+
+  .reco {
+    margin: 0 14px 10px;
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .reco.up { background: var(--green-soft); color: var(--green); border: 1px solid rgba(63,185,80,0.4); }
+  .reco.hold { background: var(--surface-2); color: var(--txt-dim); border: 1px solid var(--line); }
+  .reco.start { background: var(--accent-soft); color: var(--accent); border: 1px solid rgba(255,107,53,0.4); }
+  .reco-arrow { font-size: 15px; }
+
+  .finish-bar { margin: 18px 2px 4px; }
+  .finish-btn {
+    width: 100%;
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 15px;
+    border-radius: 14px;
+    cursor: pointer;
+  }
+  .finish-btn:active { transform: scale(0.98); }
+  .finish-btn.secondary { background: var(--surface); color: var(--txt-dim); border: 1px solid var(--line); margin-top: 8px; font-size: 13px; padding: 11px; }
+
+  /* Timer bar */
+  .timerbar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+    z-index: 50;
+  }
+  .timer-inner { max-width: 640px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+  .timer-display {
+    font-family: var(--mono);
+    font-size: 30px;
+    font-weight: 700;
+    min-width: 92px;
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+  .timer-display.running { color: var(--accent); }
+  .timer-display.done { color: var(--green); }
+  .timer-btns { display: flex; gap: 7px; flex: 1; }
+  .tbtn {
+    flex: 1;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--txt);
+    border-radius: 10px;
+    padding: 11px 4px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .tbtn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tbtn:active { transform: scale(0.96); }
+  .presets { display: flex; gap: 6px; margin-top: 8px; max-width: 640px; margin-left: auto; margin-right: auto; }
+  .preset {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--txt-dim);
+    padding: 7px 0;
+    font-size: 12px;
+    font-family: var(--mono);
+    cursor: pointer;
+  }
+  .preset.active { border-color: var(--accent); color: var(--accent); }
+
+  .footer-note { font-size: 11px; color: var(--txt-dim); text-align: center; padding: 18px 0 4px; line-height: 1.6; }
+  .reset { background: none; border: none; color: #4a5563; font-size: 11px; text-decoration: underline; cursor: pointer; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Upper Lab · 2× / semaine</div>
+    <h1>Prise de muscle — Haut</h1>
+    <div class="sub">Fréquence 2×/muscle · RIR 1-2 · surcharge progressive notée</div>
+  </header>
+
+  <div class="tabs" id="tabs"></div>
+  <div id="content"></div>
+
+  <div class="footer-note">
+    Remplis charge + reps, coche la série, le chrono démarre seul.<br>
+    Tes perfs sont sauvegardées sur cet appareil.
+    <br><button class="reset" id="reset">Réinitialiser toutes les données</button>
+  </div>
+</div>
+
+<div class="timerbar">
+  <div class="timer-inner">
+    <div class="timer-display" id="display">0:00</div>
+    <div class="timer-btns">
+      <button class="tbtn primary" id="startPause">Démarrer</button>
+      <button class="tbtn" id="reset10">−15s</button>
+      <button class="tbtn" id="add10">+15s</button>
+    </div>
+  </div>
+  <div class="presets" id="presets"></div>
+</div>
+
+<script>
+const PROGRAM = {
+  A: {
+    name: "Séance A",
+    sub: "Pecs · Épaules · Triceps",
+    warmup: "5 min cardio léger + 2 séries pyramidales sur le 1er exo : <b>15 reps @40%</b>, puis <b>8 reps @70%</b>.",
+    exercises: [
+      { name: "Développé incliné haltères", target: "Pecs haut", sets: 4, reps: "8-10", repMax: 10, inc: 2.5, start: "14 kg/main", rir: "1-2", rest: 120, planb: "Développé incliné machine / Smith incliné", cue: "Banc 30°, ne pas verrouiller en haut" },
+      { name: "Chest press OU Pec machine", target: "Pecs", sets: 3, reps: "10-12", repMax: 12, inc: 2.5, start: "ta charge habituelle (12 reps)", rir: "1", rest: 90, planb: "L'autre des deux" },
+      { name: "Développé militaire haltères", target: "Épaules", sets: 3, reps: "8-10", repMax: 10, inc: 2, start: "16 kg/main", rir: "2", rest: 120, planb: "Shoulder press machine", cue: "Banc à 80-85°" },
+      { name: "Élévations latérales debout", target: "Deltoïde latéral", sets: 4, reps: "12-15", repMax: 15, inc: 1, start: "9 kg", rir: "0-1", rest: 60, planb: "Élévations poulie unilatérales", cue: "Buste penché 10-15°, va à l'échec" },
+      { name: "Dips (lestés si possible)", target: "Pecs bas / Triceps", sets: 3, reps: "8-12", repMax: 12, inc: 2.5, start: "poids du corps", rir: "1-2", rest: 90, planb: "Dips machine assistée", cue: "Rester droit pour triceps, penché pour pecs" },
+      { name: "Extension poulie corde", target: "Triceps", sets: 3, reps: "12-15", repMax: 15, inc: 2, start: "20 kg", rir: "1", rest: 60, planb: "Haltères au front" }
+    ]
+  },
+  B: {
+    name: "Séance B",
+    sub: "Dos · Arrière épaules · Biceps",
+    warmup: "5 min cardio léger + 2 séries pyramidales sur les tractions : <b>légère</b> puis <b>moyenne</b>.",
+    exercises: [
+      { name: "Tractions pronation (lestées)", target: "Dos largeur", sets: 4, reps: "6-10", repMax: 10, inc: 2.5, start: "+21 kg de lest", rir: "1-2", rest: 120, planb: "Tirage vertical large", cue: "Prise plus large que les épaules" },
+      { name: "Rowing haltère unilatéral support banc", target: "Dos épaisseur", sets: 4, reps: "8-10", repMax: 10, inc: 2.5, start: "24 kg/main", rir: "1-2", rest: 120, planb: "Rowing machine / tirage horizontal" },
+      { name: "Rowing machine (poitrine appuyée)", target: "Dos milieu", sets: 3, reps: "10-12", repMax: 12, inc: 2.5, start: "à régler sur place (~12 reps, 1-2 en réserve)", rir: "1", rest: 90, planb: "Tirage horizontal poulie prise large / T-bar appuyé", cue: "Buste calé, tire avec les coudes" },
+      { name: "Face pull (poulie basse)", target: "Arrière épaules", sets: 4, reps: "15-20", repMax: 20, inc: 2, start: "15 kg", rir: "0-1", rest: 60, planb: "Reverse pec deck", cue: "Poulie le plus bas possible" },
+      { name: "Curl incliné haltères", target: "Biceps (chef long)", sets: 3, reps: "10-12", repMax: 12, inc: 1, start: "10 kg/main", rir: "1", rest: 60, planb: "Curl poulie basse", cue: "Banc à 45°, étirement complet" },
+      { name: "Curl pupitre / machine", target: "Biceps", sets: 3, reps: "10-12", repMax: 12, inc: 2, start: "27,5 kg", rir: "1", rest: 60, planb: "Curl prise neutre poulie corde", cue: "Pas d'élan, tension constante" }
+    ]
+  }
+};
+
+const REST_PRESETS = [60, 90, 120];
+let currentTab = "A";
+let store = loadStore();
+
+function loadStore() {
+  try {
+    const raw = localStorage.getItem("upperlab_v2");
+    return raw ? JSON.parse(raw) : { current:{}, prev:{}, reco:{} };
+  } catch(e) { return { current:{}, prev:{}, reco:{} }; }
+}
+function saveStore() {
+  try { localStorage.setItem("upperlab_v2", JSON.stringify(store)); } catch(e) {}
+}
+function ck(tab, ei, si, f) { return `${tab}.${ei}.${si}.${f}`; }
+
+function renderTabs() {
+  const t = document.getElementById("tabs");
+  t.innerHTML = "";
+  Object.keys(PROGRAM).forEach(k => {
+    const d = document.createElement("div");
+    d.className = "tab" + (k === currentTab ? " active" : "");
+    d.innerHTML = `${PROGRAM[k].name}<small>${PROGRAM[k].sub}</small>`;
+    d.onclick = () => { currentTab = k; render(); };
+    t.appendChild(d);
+  });
+}
+
+function render() {
+  renderTabs();
+  const c = document.getElementById("content");
+  const s = PROGRAM[currentTab];
+  let html = `<div class="session-title">${s.sub}</div>`;
+  html += `<div class="warmup">🔸 Échauffement — ${s.warmup}</div>`;
+
+  s.exercises.forEach((ex, ei) => {
+    html += `<div class="ex">`;
+    html += `<div class="ex-head"><div class="ex-num">${String(ei+1).padStart(2,'0')}</div>`;
+    html += `<div class="ex-info"><div class="ex-name">${ex.name}</div>`;
+    html += `<div class="ex-meta">${ex.sets} séries · ${ex.reps} reps · RIR ${ex.rir} · repos ${ex.rest}s</div>`;
+    html += `<span class="ex-target">${ex.target}</span></div></div>`;
+    if (ex.cue) html += `<div class="cue">✓ ${ex.cue}</div>`;
+    html += `<div class="planb">Si pris → <b>${ex.planb}</b></div>`;
+
+    // Recommandation de progression (calculée à la fin de la séance précédente)
+    const reco = store.reco[`${currentTab}.${ei}`];
+    if (reco) {
+      if (reco.action === "up") {
+        html += `<div class="reco up"><span class="reco-arrow">▲</span> Objectif atteint la dernière fois — passe à <b>${reco.target} kg</b> (+${reco.inc})</div>`;
+      } else {
+        html += `<div class="reco hold"><span class="reco-arrow">→</span> Reste à ${reco.lastKg} kg et vise le haut de la fourchette (${ex.repMax} reps/série)</div>`;
+      }
+    } else {
+      const lastW = store.prev[ck(currentTab, ei, 0, "kg")];
+      if (lastW) {
+        html += `<div class="last-hint">Dernière fois : <b>${lastW} kg</b></div>`;
+      } else if (ex.start) {
+        html += `<div class="reco start"><span class="reco-arrow">●</span> Départ conseillé : <b>${ex.start}</b></div>`;
+      }
+    }
+
+    html += `<div class="sets">`;
+    html += `<div class="set-row head"><div></div><div>Charge kg</div><div>Reps</div><div>OK</div></div>`;
+    for (let si = 0; si < ex.sets; si++) {
+      const kg = store.current[ck(currentTab, ei, si, "kg")] || "";
+      const reps = store.current[ck(currentTab, ei, si, "reps")] || "";
+      const done = store.current[ck(currentTab, ei, si, "done")] ? " on" : "";
+      html += `<div class="set-row">
+        <div class="set-label">S${si+1}</div>
+        <input inputmode="decimal" placeholder="–" value="${kg}" data-k="${ck(currentTab,ei,si,'kg')}">
+        <input inputmode="numeric" placeholder="–" value="${reps}" data-k="${ck(currentTab,ei,si,'reps')}">
+        <button class="done-btn${done}" data-done="${ck(currentTab,ei,si,'done')}" data-rest="${ex.rest}">✓</button>
+      </div>`;
+    }
+    html += `</div></div>`;
+  });
+
+  html += `<div class="finish-bar">
+    <button class="finish-btn" id="finishBtn">Terminer la séance ${currentTab} & calculer la progression</button>
+    <button class="finish-btn secondary" id="clearSession">Vider la saisie de cette séance</button>
+  </div>`;
+
+  c.innerHTML = html;
+
+  c.querySelectorAll("input").forEach(inp => {
+    inp.addEventListener("input", e => {
+      store.current[e.target.dataset.k] = e.target.value;
+      saveStore();
+    });
+  });
+  c.querySelectorAll(".done-btn").forEach(btn => {
+    btn.addEventListener("click", e => {
+      const k = btn.dataset.done;
+      store.current[k] = !store.current[k];
+      btn.classList.toggle("on", store.current[k]);
+      if (store.current[k]) startTimer(parseInt(btn.dataset.rest));
+      saveStore();
+    });
+  });
+  document.getElementById("finishBtn").onclick = finishSession;
+  document.getElementById("clearSession").onclick = clearSession;
+}
+
+function finishSession() {
+  const s = PROGRAM[currentTab];
+  let summary = [];
+  s.exercises.forEach((ex, ei) => {
+    // charge de référence = celle de la 1ère série
+    const refKg = parseFloat(store.current[ck(currentTab, ei, 0, "kg")]);
+    if (isNaN(refKg)) return; // exo non rempli, on ignore
+
+    // a-t-on atteint repMax sur TOUTES les séries faites ?
+    let allHit = true, anyData = false;
+    for (let si = 0; si < ex.sets; si++) {
+      const r = parseInt(store.current[ck(currentTab, ei, si, "reps")]);
+      if (!isNaN(r)) { anyData = true; if (r < ex.repMax) allHit = false; }
+      else allHit = false;
+    }
+
+    if (anyData && allHit) {
+      const target = Math.round((refKg + ex.inc) * 10) / 10;
+      store.reco[`${currentTab}.${ei}`] = { action:"up", target, inc:ex.inc, lastKg:refKg };
+      summary.push(`▲ ${ex.name} → ${target} kg`);
+    } else if (anyData) {
+      store.reco[`${currentTab}.${ei}`] = { action:"hold", lastKg:refKg };
+      summary.push(`→ ${ex.name} : reste à ${refKg} kg`);
+    }
+    // archive les perfs dans prev
+    for (let si = 0; si < ex.sets; si++) {
+      store.prev[ck(currentTab, ei, si, "kg")] = store.current[ck(currentTab, ei, si, "kg")] || "";
+      store.prev[ck(currentTab, ei, si, "reps")] = store.current[ck(currentTab, ei, si, "reps")] || "";
+    }
+  });
+
+  // vide la saisie courante de cette séance
+  Object.keys(store.current).forEach(k => { if (k.startsWith(currentTab + ".")) delete store.current[k]; });
+  saveStore();
+  render();
+
+  if (summary.length) {
+    alert("Séance " + currentTab + " enregistrée.\n\nProchaine fois :\n\n" + summary.join("\n"));
+  } else {
+    alert("Séance " + currentTab + " enregistrée. Aucune charge saisie à analyser.");
+  }
+}
+
+function clearSession() {
+  if (!confirm("Vider la saisie en cours de la séance " + currentTab + " ? (l'historique et les recommandations sont conservés)")) return;
+  Object.keys(store.current).forEach(k => { if (k.startsWith(currentTab + ".")) delete store.current[k]; });
+  saveStore(); render();
+}
+
+// ---- TIMER ----
+let timerTotal = 90, timerLeft = 90, timerId = null, running = false;
+const display = document.getElementById("display");
+const startPause = document.getElementById("startPause");
+
+function fmt(s) { const m = Math.floor(s/60); const ss = s%60; return `${m}:${String(ss).padStart(2,'0')}`; }
+function paint() {
+  display.textContent = fmt(Math.max(0, timerLeft));
+  display.className = "timer-display" + (running ? " running" : (timerLeft<=0 ? " done" : ""));
+}
+function tick() {
+  timerLeft--;
+  if (timerLeft <= 0) {
+    timerLeft = 0; stopTimer();
+    display.className = "timer-display done";
+    beep();
+    if (navigator.vibrate) navigator.vibrate([200,80,200]);
+  }
+  paint();
+}
+function startTimer(sec) {
+  timerTotal = sec; timerLeft = sec; running = true;
+  setActivePreset(sec);
+  clearInterval(timerId); timerId = setInterval(tick, 1000);
+  startPause.textContent = "Pause"; paint();
+}
+function stopTimer() { running = false; clearInterval(timerId); startPause.textContent = "Démarrer"; }
+
+startPause.onclick = () => {
+  if (running) { stopTimer(); paint(); }
+  else { if (timerLeft <= 0) timerLeft = timerTotal; running = true; clearInterval(timerId); timerId = setInterval(tick,1000); startPause.textContent="Pause"; paint(); }
+};
+document.getElementById("add10").onclick = () => { timerLeft += 15; paint(); };
+document.getElementById("reset10").onclick = () => { timerLeft = Math.max(0, timerLeft-15); paint(); };
+
+const presetsEl = document.getElementById("presets");
+function renderPresets() {
+  presetsEl.innerHTML = "";
+  REST_PRESETS.forEach(p => {
+    const b = document.createElement("button");
+    b.className = "preset" + (p===timerTotal ? " active":"");
+    b.textContent = fmt(p);
+    b.onclick = () => startTimer(p);
+    presetsEl.appendChild(b);
+  });
+}
+function setActivePreset(sec) {
+  presetsEl.querySelectorAll(".preset").forEach((b,i)=> b.classList.toggle("active", REST_PRESETS[i]===sec));
+}
+
+// beep via WebAudio (pas de fichier externe)
+let actx;
+function beep() {
+  try {
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    [0,0.25].forEach(d => {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.connect(g); g.connect(actx.destination);
+      o.frequency.value = 880; o.type = "sine";
+      const t = actx.currentTime + d;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.4, t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+0.18);
+      o.start(t); o.stop(t+0.2);
+    });
+  } catch(e){}
+}
+
+document.getElementById("reset").onclick = () => {
+  if (confirm("Effacer toutes les charges, l'historique et les recommandations ?")) {
+    store = { current:{}, prev:{}, reco:{} }; saveStore(); render();
+  }
+};
+
+renderPresets();
+paint();
+render();
+</script>
+</body>
+</html>
